@@ -21,24 +21,28 @@ async function capture(url) {
     await mkdir(outputDir, { recursive: true });
 
     const viewport = page.viewportSize();
-    const scrollHeight = await page.evaluate(() => document.documentElement.scrollHeight);
     const viewportHeight = viewport.height;
 
     let scrollPosition = 0;
     let index = 0;
 
     // Capture screenshots while scrolling
-    while (scrollPosition < scrollHeight) {
+    while (true) {
       const filename = path.join(outputDir, `${String(index).padStart(3, '0')}.png`);
       await page.screenshot({ path: filename });
 
       index++;
       scrollPosition += viewportHeight;
 
+      // Re-evaluate scroll height for dynamically loaded content
+      const scrollHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+
       if (scrollPosition < scrollHeight) {
         await page.evaluate((scrollY) => window.scrollTo(0, scrollY), scrollPosition);
         // Wait for lazy-loaded content
         await page.waitForTimeout(500);
+      } else {
+        break;
       }
     }
 
@@ -55,6 +59,14 @@ const url = process.argv[2];
 
 if (!url) {
   console.error('Usage: node capture.js <url>');
+  process.exit(1);
+}
+
+// Validate URL before launching browser
+try {
+  new URL(url);
+} catch (error) {
+  console.error('Error: Invalid URL provided');
   process.exit(1);
 }
 
