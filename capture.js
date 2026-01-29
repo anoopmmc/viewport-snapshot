@@ -3,46 +3,51 @@ const { mkdir } = require('fs/promises');
 const path = require('path');
 
 async function capture(url) {
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+  let browser;
+  try {
+    browser = await chromium.launch();
+    const page = await browser.newPage();
 
-  // Navigate to URL
-  await page.goto(url, { waitUntil: 'networkidle' });
+    // Navigate to URL
+    await page.goto(url, { waitUntil: 'networkidle' });
 
-  // Extract domain from URL
-  const urlObj = new URL(url);
-  const domain = urlObj.hostname.replace(/^www\./, '') || 'local';
+    // Extract domain from URL
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname.replace(/^www\./, '') || 'local';
 
-  // Create output directory: screenshots/domain/YYYY-MM-DD
-  const date = new Date().toISOString().split('T')[0];
-  const outputDir = path.join('screenshots', domain, date);
-  await mkdir(outputDir, { recursive: true });
+    // Create output directory: screenshots/domain/YYYY-MM-DD
+    const date = new Date().toISOString().split('T')[0];
+    const outputDir = path.join('screenshots', domain, date);
+    await mkdir(outputDir, { recursive: true });
 
-  const viewport = page.viewportSize();
-  const scrollHeight = await page.evaluate(() => document.documentElement.scrollHeight);
-  const viewportHeight = viewport.height;
+    const viewport = page.viewportSize();
+    const scrollHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+    const viewportHeight = viewport.height;
 
-  let scrollPosition = 0;
-  let index = 0;
+    let scrollPosition = 0;
+    let index = 0;
 
-  // Capture screenshots while scrolling
-  while (scrollPosition < scrollHeight) {
-    const filename = path.join(outputDir, `${String(index).padStart(3, '0')}.png`);
-    await page.screenshot({ path: filename });
+    // Capture screenshots while scrolling
+    while (scrollPosition < scrollHeight) {
+      const filename = path.join(outputDir, `${String(index).padStart(3, '0')}.png`);
+      await page.screenshot({ path: filename });
 
-    index++;
-    scrollPosition += viewportHeight;
+      index++;
+      scrollPosition += viewportHeight;
 
-    if (scrollPosition < scrollHeight) {
-      await page.evaluate((scrollY) => window.scrollTo(0, scrollY), scrollPosition);
-      // Wait for lazy-loaded content
-      await page.waitForTimeout(500);
+      if (scrollPosition < scrollHeight) {
+        await page.evaluate((scrollY) => window.scrollTo(0, scrollY), scrollPosition);
+        // Wait for lazy-loaded content
+        await page.waitForTimeout(500);
+      }
+    }
+
+    console.log(`Saved ${index} screenshots to ${outputDir}`);
+  } finally {
+    if (browser) {
+      await browser.close();
     }
   }
-
-  await browser.close();
-
-  console.log(`Saved ${index} screenshots to ${outputDir}`);
 }
 
 // Parse command line arguments
