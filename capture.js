@@ -66,7 +66,7 @@ if (!url) {
 try {
   new URL(url);
 } catch (error) {
-  console.error('Error: Invalid URL provided');
+  console.error(`Error: Invalid URL provided: ${url}`);
   process.exit(1);
 }
 
