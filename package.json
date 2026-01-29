@@ -1,0 +1,20 @@
+{
+  "name": "viewport-snapshot",
+  "version": "1.0.0",
+  "description": "Sequential viewport screenshots of webpages using Playwright",
+  "main": "capture.js",
+  "scripts": {
+    "capture": "node capture.js"
+  },
+  "keywords": [
+    "playwright",
+    "screenshot",
+    "viewport",
+    "capture"
+  ],
+  "author": "Anoop M C",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.58.0"
+  }
+}
